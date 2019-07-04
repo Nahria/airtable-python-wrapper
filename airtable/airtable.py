@@ -306,6 +306,38 @@ class Airtable:
         else:
             return {}
 
+    def match_fields(self, field_names, field_values, **options):
+        """
+        Returns first match found in :any:`get_all`
+
+        >>> airtable.match_fields(['Name', 'Age'], ['John', 30])
+        {'fields': {'Name': 'John', 'Age': 30} }
+
+        Args:
+            field_name (``list``): Name of field to match (column name).
+            field_value (``list``): Value of field to match.
+
+        Keyword Args:
+            max_records (``int``, optional): The maximum total number of
+                records that will be returned. See :any:`MaxRecordsParam`
+            view (``str``, optional): The name or ID of a view.
+                See :any:`ViewParam`.
+            fields (``str``, ``list``, optional): Name of field or fields to
+                be retrieved. Default is all fields. See :any:`FieldsParam`.
+            sort (``list``, optional): List of fields to sort by.
+                Default order is ascending. See :any:`SortParam`.
+
+        Returns:
+            record (``dict``): First record to match the field_value provided
+        # """
+        from_names_and_values = AirtableParams.FormulaParam.from_names_and_values
+        formula = from_names_and_values(field_names, field_values)
+        options["formula"] = formula
+        for record in self.get_all(**options):
+            return record
+        else:
+            return {}
+
     def search(self, field_name, field_value, record=None, **options):
         """
         Returns all matching records found in :any:`get_all`
@@ -435,6 +467,38 @@ class Airtable:
             record (``dict``): Updated record
         """
         record = self.match(field_name, field_value, **options)
+        return {} if not record else self.update(record["id"], fields, typecast)
+
+    def update_by_fields(
+        self, field_names, field_values, fields, typecast=False, **options
+    ):
+        """
+        Updates the first record to match all fields names and values.
+        Only Fields passed are updated, the rest are left as is.
+
+        >>> record = {'Name': 'John', 'Age': 30, 'Tel': '540-255-5522'}
+        >>> airtable.update_by_field(['Name', 'Age'], ['John', 30], record)
+
+        Args:
+            field_names (``list``): Names of fields to match (column names).
+            field_values (``list``): Values of fields to match.
+            fields(``dict``): Fields to update.
+                Must be dictionary with Column names as Key
+            typecast(``boolean``): Automatic data conversion from string values.
+
+        Keyword Args:
+            view (``str``, optional): The name or ID of a view.
+                See :any:`ViewParam`.
+            sort (``list``, optional): List of fields to sort by.
+                Default order is ascending. See :any:`SortParam`.
+
+        Returns:
+            record (``dict``): Updated record
+        """
+        if len(field_names) != len(field_values):
+            raise Exception('Fields names and fields values \
+                             should have the same length')
+        record = self.match_fields(field_names, field_values, **options)
         return {} if not record else self.update(record["id"], fields, typecast)
 
     def replace(self, record_id, fields, typecast=False):

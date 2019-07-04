@@ -210,6 +210,19 @@ class AirtableParams:
             formula = "{{{name}}}={value}".format(name=field_name, value=field_value)
             return formula
 
+        @staticmethod
+        def from_names_and_values(field_names, field_values):
+            """
+            Creates a formula to match cells from from field_names and values
+            """
+            
+            formula = []
+            for items in zip(field_names, field_values):
+                if isinstance(items[1], str):
+                    field_value = "'{}'".format(items[1])
+                formula.append( "{{{name}}}={value}".format(name=items[0], value=field_value) )
+            return "AND(" + ",".join(formula) + ")"
+
     class _OffsetParam(_BaseParam):
         """
         Offset Param
